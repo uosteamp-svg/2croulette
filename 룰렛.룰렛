@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>오늘의 색상은?</title>
+    <style>
+      :root {
+        --bg: #eef3f6;
+        --surface: #ffffff;
+        --surface-soft: #f7f9fb;
+        --text: #15191f;
+        --muted: #667281;
+        --line: #dde4eb;
+        --accent: #246bfe;
+        --accent-dark: #174ac0;
+        --danger: #c93434;
+        --shadow: 0 18px 45px rgba(35, 45, 62, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        color: var(--text);
+        font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+        background:
+          linear-gradient(145deg, rgba(36, 107, 254, 0.14), transparent 42%),
+          linear-gradient(315deg, rgba(255, 191, 71, 0.18), transparent 40%),
+          var(--bg);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        cursor: pointer;
+      }
+
+      .phone {
+        width: min(100%, 430px);
+        min-height: min(850px, calc(100vh - 36px));
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        border-radius: 30px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .app {
+        min-height: inherit;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .topbar {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 72px;
+        padding: 18px 58px 10px;
+      }
+
+      .topbar h1 {
+        margin: 0;
+        text-align: center;
+        font-size: 1.26rem;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+
+      .icon-button {
+        position: absolute;
+        top: 17px;
+        right: 16px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        color: var(--text);
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+      }
+
+      .icon-button span {
+        display: block;
+        font-size: 1.4rem;
+        line-height: 1;
+        transform: translateY(-1px);
+      }
+
+      .page {
+        display: none;
+        padding: 8px 22px 22px;
+      }
+
+      .page.active {
+        display: block;
+      }
+
+      .wheel-area {
+        position: relative;
+        display: grid;
+        place-items: center;
+        margin: 22px auto 20px;
+        width: min(100%, 342px);
+        aspect-ratio: 1;
+      }
+
+      .pointer {
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        z-index: 3;
+        width: 0;
+        height: 0;
+        transform: translateX(-50%);
+        border-left: 16px solid transparent;
+        border-right: 16px solid transparent;
+        border-top: 34px solid #10151d;
+        filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.18));
+      }
+
+      .wheel {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 10px solid #ffffff;
+        overflow: hidden;
+        background: conic-gradient(#f35d5d 0deg 90deg, #ffd166 90deg 180deg, #2ec4b6 180deg 270deg, #5b8def 270deg 360deg);
+        box-shadow:
+          inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+          0 16px 30px rgba(30, 41, 59, 0.17);
+        transition: transform 3s cubic-bezier(0.12, 0.72, 0.08, 1);
+      }
+
+      .wheel::after {
+        content: "";
+        position: absolute;
+        inset: 50%;
+        width: 74px;
+        height: 74px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 6px 16px rgba(21, 25, 31, 0.18);
+      }
+
+      .result {
+        min-height: 84px;
+        display: grid;
+        place-items: center;
+        margin: 6px 0 18px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-soft);
+        text-align: center;
+      }
+
+      .result p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.94rem;
+        line-height: 1.45;
+      }
+
+      .result strong {
+        display: block;
+        margin-top: 3px;
+        font-size: 1.45rem;
+        color: var(--text);
+      }
+
+      .swatch {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 7px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        vertical-align: -1px;
+      }
+
+      .primary-button {
+        width: 100%;
+        min-height: 56px;
+        border-radius: 8px;
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        font-size: 1.05rem;
+        font-weight: 900;
+        box-shadow: 0 12px 20px rgba(36, 107, 254, 0.23);
+      }
+
+      .primary-button:disabled {
+        opacity: 0.62;
+        cursor: wait;
+      }
+
+      .secondary-button {
+        width: 100%;
+        min-height: 48px;
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+        font-weight: 800;
+      }
+
+      .input-stack {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .field label {
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 800;
+      }
+
+      .field input[type="text"] {
+        width: 100%;
+        min-height: 52px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text);
+        background: #ffffff;
+      }
+
+      .hint {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+      }
+
+      .message {
+        min-height: 20px;
+        margin: 10px 0 0;
+        color: var(--danger);
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .color-list {
+        display: grid;
+        gap: 9px;
+        margin: 20px 0 0;
+      }
+
+      .color-item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        min-height: 50px;
+        padding: 8px 8px 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-soft);
+      }
+
+      .color-name {
+        min-width: 0;
+        font-weight: 850;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .delete-button {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: var(--danger);
+        background: #fff0f0;
+        border: 1px solid #f3c7c7;
+        font-size: 1.15rem;
+        line-height: 1;
+      }
+
+      .bottom-nav {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 14px 22px 22px;
+        background: rgba(255, 255, 255, 0.92);
+        border-top: 1px solid var(--line);
+      }
+
+      .nav-button {
+        min-height: 46px;
+        border-radius: 8px;
+        color: var(--muted);
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+        font-weight: 900;
+      }
+
+      .nav-button.active {
+        color: #ffffff;
+        background: #15191f;
+        border-color: #15191f;
+      }
+
+      @media (max-width: 460px) {
+        body {
+          padding: 0;
+          background: var(--surface);
+        }
+
+        .phone {
+          width: 100%;
+          min-height: 100vh;
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        .app {
+          min-height: 100vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone">
+      <main class="app">
+        <header class="topbar">
+          <h1>오늘의 색상은?</h1>
+          <button class="icon-button" id="settingsButton" type="button" aria-label="색상 입력 페이지로 이동">
+            <span>+</span>
+          </button>
+        </header>
+
+        <section class="page active" id="roulettePage" aria-label="룰렛 페이지">
+          <div class="wheel-area" aria-live="polite">
+            <div class="pointer" aria-hidden="true"></div>
+            <div class="wheel" id="wheel"></div>
+          </div>
+
+          <div class="result" id="resultBox">
+            <p>Start 버튼을 눌러 오늘의 색상을 뽑아보세요.</p>
+          </div>
+
+          <button class="primary-button" id="startButton" type="button">Start</button>
+        </section>
+
+        <section class="page" id="inputPage" aria-label="색상 입력 페이지">
+          <form class="input-stack" id="colorForm">
+            <div class="field">
+              <label for="colorName">추가할 색상명</label>
+              <input id="colorName" type="text" maxlength="18" placeholder="예: 하늘색, 보라색, 민트색" autocomplete="off" />
+              <p class="hint">한글로 입력하면 색상이 자동으로 추가됩니다.</p>
+              <p class="message" id="inputMessage" aria-live="polite"></p>
+            </div>
+
+            <div class="field">
+              <button class="secondary-button" type="submit">색상 추가</button>
+              <p class="hint">입력한 항목은 룰렛에 같은 비율로 표시되며, 원판에는 색상만 보입니다.</p>
+            </div>
+          </form>
+
+          <div class="color-list" id="colorList"></div>
+        </section>
+
+        <nav class="bottom-nav" aria-label="페이지 이동">
+          <button class="nav-button active" id="rouletteTab" type="button">룰렛</button>
+          <button class="nav-button" id="inputTab" type="button">입력</button>
+        </nav>
+      </main>
+    </div>
+
+    <script>
+      const defaultColors = [
+        { name: "레드", value: "#ef4444" },
+        { name: "옐로우", value: "#f59e0b" },
+        { name: "그린", value: "#22c55e" },
+        { name: "블루", value: "#3b82f6" }
+      ];
+
+      let colors = [...defaultColors];
+      let currentRotation = 0;
+      let isSpinning = false;
+
+      const wheel = document.getElementById("wheel");
+      const resultBox = document.getElementById("resultBox");
+      const startButton = document.getElementById("startButton");
+      const colorForm = document.getElementById("colorForm");
+      const colorName = document.getElementById("colorName");
+      const inputMessage = document.getElementById("inputMessage");
+      const colorList = document.getElementById("colorList");
+      const roulettePage = document.getElementById("roulettePage");
+      const inputPage = document.getElementById("inputPage");
+      const rouletteTab = document.getElementById("rouletteTab");
+      const inputTab = document.getElementById("inputTab");
+      const settingsButton = document.getElementById("settingsButton");
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function showPage(pageName) {
+        const isRoulette = pageName === "roulette";
+        roulettePage.classList.toggle("active", isRoulette);
+        inputPage.classList.toggle("active", !isRoulette);
+        rouletteTab.classList.toggle("active", isRoulette);
+        inputTab.classList.toggle("active", !isRoulette);
+      }
+
+      function resolveColorValue(name) {
+        const normalized = name.replace(/\s+/g, "").toLowerCase();
+        const colorMap = {
+          빨강: "#ef4444",
+          빨간색: "#ef4444",
+          레드: "#ef4444",
+          주황: "#f97316",
+          주황색: "#f97316",
+          오렌지: "#f97316",
+          노랑: "#facc15",
+          노란색: "#facc15",
+          옐로우: "#facc15",
+          초록: "#22c55e",
+          초록색: "#22c55e",
+          녹색: "#16a34a",
+          그린: "#22c55e",
+          민트: "#2dd4bf",
+          민트색: "#2dd4bf",
+          청록: "#14b8a6",
+          하늘: "#38bdf8",
+          하늘색: "#38bdf8",
+          파랑: "#3b82f6",
+          파란색: "#3b82f6",
+          블루: "#3b82f6",
+          남색: "#1d4ed8",
+          보라: "#8b5cf6",
+          보라색: "#8b5cf6",
+          퍼플: "#8b5cf6",
+          분홍: "#ec4899",
+          분홍색: "#ec4899",
+          핑크: "#ec4899",
+          자주: "#be185d",
+          갈색: "#92400e",
+          브라운: "#92400e",
+          베이지: "#d6b48c",
+          검정: "#111827",
+          검은색: "#111827",
+          블랙: "#111827",
+          회색: "#6b7280",
+          그레이: "#6b7280",
+          흰색: "#f8fafc",
+          하양: "#f8fafc",
+          화이트: "#f8fafc",
+          금색: "#d4af37",
+          골드: "#d4af37",
+          은색: "#c0c7d1",
+          실버: "#c0c7d1"
+        };
+
+        if (colorMap[normalized]) {
+          return colorMap[normalized];
+        }
+
+        let hash = 0;
+        for (let index = 0; index < normalized.length; index += 1) {
+          hash = (hash * 31 + normalized.charCodeAt(index)) % 360;
+        }
+
+        return `hsl(${hash}, 78%, 58%)`;
+      }
+
+      function renderWheel() {
+        const slice = 360 / colors.length;
+        const gradient = colors
+          .map((color, index) => {
+            const start = index * slice;
+            const end = (index + 1) * slice;
+            return `${color.value} ${start}deg ${end}deg`;
+          })
+          .join(", ");
+
+        wheel.style.background = `conic-gradient(${gradient})`;
+      }
+
+      function renderList() {
+        colorList.innerHTML = colors
+          .map((color, index) => {
+            return `
+              <div class="color-item">
+                <div class="color-name">
+                  <span class="swatch" style="background:${color.value}"></span>${escapeHtml(color.name)}
+                </div>
+                <button class="delete-button" type="button" data-index="${index}" aria-label="${escapeHtml(color.name)} 삭제">×</button>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderResult(color) {
+        if (!color) {
+          resultBox.innerHTML = "<p>Start 버튼을 눌러 오늘의 색상을 뽑아보세요.</p>";
+          return;
+        }
+
+        resultBox.innerHTML = `
+          <p>오늘의 색상은</p>
+          <strong><span class="swatch" style="background:${color.value}"></span>${escapeHtml(color.name)}</strong>
+        `;
+      }
+
+      function spinWheel() {
+        if (isSpinning || colors.length === 0) {
+          return;
+        }
+
+        isSpinning = true;
+        startButton.disabled = true;
+        renderResult(null);
+
+        const selectedIndex = Math.floor(Math.random() * colors.length);
+        const slice = 360 / colors.length;
+        const selectedCenter = selectedIndex * slice + slice / 2;
+        const fullSpins = 5 * 360;
+        const currentAngle = ((currentRotation % 360) + 360) % 360;
+        const targetAngle = 360 - selectedCenter;
+        const extraRotation = (targetAngle - currentAngle + 360) % 360;
+        currentRotation += fullSpins + extraRotation;
+
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+        window.setTimeout(() => {
+          renderResult(colors[selectedIndex]);
+          isSpinning = false;
+          startButton.disabled = false;
+        }, 3000);
+      }
+
+      colorForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const name = colorName.value.trim();
+
+        if (!name) {
+          inputMessage.textContent = "추가할 색상명을 입력해주세요.";
+          colorName.focus();
+          return;
+        }
+
+        colors.push({ name, value: resolveColorValue(name) });
+        colorName.value = "";
+        inputMessage.textContent = "";
+        renderWheel();
+        renderList();
+        showPage("roulette");
+      });
+
+      colorList.addEventListener("click", (event) => {
+        const button = event.target.closest(".delete-button");
+        if (!button || colors.length <= 2) {
+          return;
+        }
+
+        colors.splice(Number(button.dataset.index), 1);
+        renderWheel();
+        renderList();
+      });
+
+      startButton.addEventListener("click", spinWheel);
+      rouletteTab.addEventListener("click", () => showPage("roulette"));
+      inputTab.addEventListener("click", () => showPage("input"));
+      settingsButton.addEventListener("click", () => showPage("input"));
+
+      renderWheel();
+      renderList();
+    </script>
+  </body>
+</html>
